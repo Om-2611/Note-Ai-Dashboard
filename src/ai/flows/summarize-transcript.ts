@@ -37,9 +37,12 @@ const summarizeTranscriptPrompt = ai.definePrompt({
   name: 'summarizeTranscriptPrompt',
   input: {schema: SummarizeTranscriptInputSchema},
   output: {schema: SummarizeTranscriptOutputSchema},
-  prompt: `You will be given a transcript. Your task is to copy the content of the transcript exactly as it is and place it inside the 'summary' field of the output.
+  prompt: `You are an AI assistant. Your task is to process the given transcript.
+You must return a JSON object with a single key "summary".
+The value of the "summary" key should be the exact content of the transcript provided below.
 
-Transcript: {{{transcript}}}
+Transcript:
+{{{transcript}}}
 `,
 });
 
