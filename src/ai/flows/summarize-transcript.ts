@@ -40,7 +40,7 @@ const summarizeTranscriptPrompt = ai.definePrompt({
 
 Transcript: {{{transcript}}}
 
-{% if customPrompt %}Custom Prompt: {{{customPrompt}}}{% endif %}
+{{#if customPrompt}}Custom Prompt: {{{customPrompt}}}{{/if}}
 
 Summary:`,
 });
