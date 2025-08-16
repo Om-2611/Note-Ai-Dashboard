@@ -36,7 +36,7 @@ const summarizeTranscriptPrompt = ai.definePrompt({
   name: 'summarizeTranscriptPrompt',
   input: {schema: SummarizeTranscriptInputSchema},
   output: {schema: SummarizeTranscriptOutputSchema},
-  prompt: `You are an expert at summarizing meeting transcripts.  Your goal is to create a concise and informative summary of the key discussion points.
+  prompt: `Summarize the file content.
 
 Transcript: {{{transcript}}}
 
