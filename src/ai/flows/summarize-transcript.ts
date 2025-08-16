@@ -1,3 +1,4 @@
+
 'use server';
 
 /**
@@ -36,11 +37,9 @@ const summarizeTranscriptPrompt = ai.definePrompt({
   name: 'summarizeTranscriptPrompt',
   input: {schema: SummarizeTranscriptInputSchema},
   output: {schema: SummarizeTranscriptOutputSchema},
-  prompt: `Summarize the file content.
+  prompt: `Please copy the content from the transcript and paste it into the summary. Do not add any other text.
 
 Transcript: {{{transcript}}}
-
-{{#if customPrompt}}Custom Prompt: {{{customPrompt}}}{{/if}}
 
 Summary:`,
 });
