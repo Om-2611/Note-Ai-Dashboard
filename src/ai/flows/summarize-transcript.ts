@@ -37,11 +37,10 @@ const summarizeTranscriptPrompt = ai.definePrompt({
   name: 'summarizeTranscriptPrompt',
   input: {schema: SummarizeTranscriptInputSchema},
   output: {schema: SummarizeTranscriptOutputSchema},
-  prompt: `Please copy the content from the transcript and paste it into the summary. Do not add any other text.
+  prompt: `You will be given a transcript. Your task is to copy the content of the transcript exactly as it is and place it inside the 'summary' field of the output.
 
 Transcript: {{{transcript}}}
-
-Summary:`,
+`,
 });
 
 const summarizeTranscriptFlow = ai.defineFlow(
