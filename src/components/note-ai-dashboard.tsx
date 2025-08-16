@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
@@ -10,6 +11,8 @@ import {
   Trash2,
   Upload,
   WandSparkles,
+  Edit,
+  Share2,
 } from "lucide-react";
 import {
   SidebarProvider,
@@ -21,6 +24,7 @@ import {
   SidebarMenu,
   SidebarMenuItem,
   SidebarMenuButton,
+  SidebarMenuAction,
   SidebarInset,
   SidebarSeparator,
 } from "@/components/ui/sidebar";
@@ -33,6 +37,8 @@ import { useToast } from "@/hooks/use-toast";
 import { summarizeTranscript } from "@/ai/flows/summarize-transcript";
 import { refineGeneratedSummary } from "@/ai/flows/refine-generated-summary";
 import { customizeSummaryWithPrompt } from "@/ai/flows/customize-summary-with-prompt";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+
 
 type Summary = {
   id: string;
@@ -47,6 +53,7 @@ export function NoteAIDashboard() {
   const { toast } = useToast();
   const [summaries, setSummaries] = useState<Summary[]>([]);
   const [activeSummaryId, setActiveSummaryId] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState("summarize");
 
   const [transcript, setTranscript] = useState("");
   const [transcriptFileName, setTranscriptFileName] = useState("");
@@ -84,11 +91,13 @@ export function NoteAIDashboard() {
       setCustomPrompt(activeSummary.customPrompt);
       setEditedSummary(activeSummary.summary);
       setTranscriptFileName(activeSummary.title);
+      setActiveTab("edit");
     } else {
       setTranscript("");
       setCustomPrompt("");
       setEditedSummary("");
       setTranscriptFileName("");
+      setActiveTab("summarize");
     }
   }, [activeSummary]);
 
@@ -128,11 +137,11 @@ export function NoteAIDashboard() {
     setIsLoading(true);
     setLoadingMessage("Generating summary...");
     try {
-      const result = await summarizeTranscript({ transcript, customPrompt });
+      const result = await summarizeTranscript({ transcript, customPrompt: "" });
       const newSummary: Summary = {
         id: new Date().toISOString(),
         transcript,
-        customPrompt,
+        customPrompt: "",
         summary: result.summary,
         title: transcriptFileName || `Summary ${new Date().toLocaleDateString()}`,
         createdAt: new Date().toISOString(),
@@ -197,6 +206,10 @@ export function NoteAIDashboard() {
       );
       updateSummaries(updatedSummaries);
       setEditedSummary(result.refinedSummary);
+      toast({
+        title: "Summary Customized",
+        description: "The summary has been updated with your instructions.",
+      });
     } catch (error) {
       console.error(error);
       toast({
@@ -288,9 +301,24 @@ export function NoteAIDashboard() {
         </header>
 
         <main className="flex-1 p-4 md:p-8 bg-background">
-          <div className="grid gap-8 lg:grid-cols-2">
-            <div className="flex flex-col gap-8">
-              <Card>
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+            <TabsList className="grid w-full grid-cols-3 max-w-md mx-auto">
+              <TabsTrigger value="summarize" disabled={!!activeSummaryId}>
+                <Upload className="mr-2" />
+                Summarize
+              </TabsTrigger>
+              <TabsTrigger value="edit" disabled={!activeSummaryId}>
+                <Edit className="mr-2" />
+                Edit & Refine
+              </TabsTrigger>
+              <TabsTrigger value="share" disabled={!activeSummaryId}>
+                <Share2 className="mr-2" />
+                Share
+              </TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="summarize" className="mt-6">
+              <Card className="max-w-2xl mx-auto">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
                     <Upload className="text-primary" />
@@ -299,86 +327,100 @@ export function NoteAIDashboard() {
                 </CardHeader>
                 <CardContent className="space-y-6">
                   <div className="space-y-2">
-                    <Label htmlFor="transcript-upload">1. Upload Transcript</Label>
+                    <Label htmlFor="transcript-upload">Upload Transcript</Label>
                     <div className="flex items-center gap-2">
-                        <Input id="transcript-upload" type="file" accept=".txt,.md" onChange={handleFileChange} className="flex-1"/>
+                      <Input id="transcript-upload" type="file" accept=".txt,.md" onChange={handleFileChange} className="flex-1" />
                     </div>
                     {transcriptFileName && <p className="text-sm text-muted-foreground">File: {transcriptFileName}</p>}
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="custom-prompt">2. Add Custom Instructions (Optional)</Label>
-                    <Textarea
-                      id="custom-prompt"
-                      placeholder="e.g., 'Focus on action items' or 'Summarize in bullet points'"
-                      value={customPrompt}
-                      onChange={(e) => setCustomPrompt(e.target.value)}
-                    />
-                  </div>
-                  <div className="flex gap-2">
-                  <Button onClick={handleGenerateSummary} disabled={isLoading || !transcript || !!activeSummaryId} className="w-full bg-primary hover:bg-primary/90">
-                    {isLoading && loadingMessage.startsWith('Generating') ? <Loader2 className="animate-spin" /> : <WandSparkles />}
+                  <Button onClick={handleGenerateSummary} disabled={isLoading || !transcript} className="w-full bg-primary hover:bg-primary/90">
+                    {isLoading ? <Loader2 className="animate-spin" /> : <WandSparkles />}
                     Generate Summary
                   </Button>
-                  <Button onClick={handleCustomizeSummary} disabled={isLoading || !activeSummaryId || !customPrompt} variant="outline" className="w-full">
-                    {isLoading && loadingMessage.startsWith('Customizing') ? <Loader2 className="animate-spin" /> : <WandSparkles />}
-                    Customize
-                  </Button>
-                  </div>
                 </CardContent>
               </Card>
-            </div>
-            <div className="flex flex-col gap-8">
-              <Card className="flex-1 flex flex-col">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <FileText className="text-primary" />
-                    Generated Summary
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="flex-1 flex flex-col gap-4">
-                  <div className="relative flex-1">
-                  <Textarea
-                    placeholder="Your AI-generated summary will appear here..."
-                    className="h-full min-h-[200px] resize-none"
-                    value={editedSummary}
-                    onChange={(e) => setEditedSummary(e.target.value)}
-                    readOnly={isLoading || !activeSummary}
-                  />
-                  {isLoading && (
-                    <div className="absolute inset-0 bg-card/50 flex flex-col items-center justify-center gap-2 rounded-md">
-                      <Loader2 className="w-8 h-8 animate-spin text-primary" />
-                      <p className="text-muted-foreground">{loadingMessage}</p>
+            </TabsContent>
+
+            <TabsContent value="edit" className="mt-6">
+              <div className="grid gap-8 max-w-4xl mx-auto">
+                <Card className="flex-1 flex flex-col">
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <FileText className="text-primary" />
+                      Generated Summary
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="flex-1 flex flex-col gap-4">
+                    <div className="relative flex-1">
+                      <Textarea
+                        placeholder="Your AI-generated summary will appear here..."
+                        className="h-full min-h-[250px] resize-none"
+                        value={editedSummary}
+                        onChange={(e) => setEditedSummary(e.target.value)}
+                        readOnly={isLoading || !activeSummary}
+                      />
+                      {isLoading && (
+                        <div className="absolute inset-0 bg-card/50 flex flex-col items-center justify-center gap-2 rounded-md">
+                          <Loader2 className="w-8 h-8 animate-spin text-primary" />
+                          <p className="text-muted-foreground">{loadingMessage}</p>
+                        </div>
+                      )}
                     </div>
-                  )}
-                  </div>
-                  <Button onClick={handleRefineSummary} disabled={isLoading || !activeSummary || editedSummary === activeSummary.summary} className="w-full bg-accent hover:bg-accent/90 text-accent-foreground">
-                    <WandSparkles />
-                    Refine with AI
-                  </Button>
-                </CardContent>
-              </Card>
-              <Card>
+                    <Button onClick={handleRefineSummary} disabled={isLoading || !activeSummary || editedSummary === activeSummary.summary} className="w-full bg-accent hover:bg-accent/90 text-accent-foreground">
+                      <WandSparkles />
+                      Refine with Your Edits
+                    </Button>
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <WandSparkles className="text-primary" />
+                      Customize with a Prompt
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                     <div className="space-y-2">
+                        <Label htmlFor="custom-prompt">Custom Instructions</Label>
+                        <Textarea
+                          id="custom-prompt"
+                          placeholder="e.g., 'Focus on action items' or 'Summarize in bullet points'"
+                          value={customPrompt}
+                          onChange={(e) => setCustomPrompt(e.target.value)}
+                        />
+                      </div>
+                      <Button onClick={handleCustomizeSummary} disabled={isLoading || !activeSummaryId || !customPrompt} variant="outline" className="w-full">
+                        {isLoading && loadingMessage.startsWith('Customizing') ? <Loader2 className="animate-spin" /> : <WandSparkles />}
+                        Apply Instructions
+                      </Button>
+                  </CardContent>
+                </Card>
+              </div>
+            </TabsContent>
+
+            <TabsContent value="share" className="mt-6">
+               <Card className="max-w-2xl mx-auto">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
                     <Mail className="text-primary" />
-                    Share Summary
+                    Share Summary via Email
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="flex items-center gap-4">
-                  <Input 
-                    type="email" 
-                    placeholder="Recipient's email" 
+                  <Input
+                    type="email"
+                    placeholder="Recipient's email"
                     value={recipientEmail}
                     onChange={(e) => setRecipientEmail(e.target.value)}
                     disabled={isLoading || !activeSummary}
-                    />
+                  />
                   <Button onClick={handleSendEmail} disabled={isLoading || !activeSummary} variant="secondary">
-                    Send
+                    Send Email
                   </Button>
                 </CardContent>
               </Card>
-            </div>
-          </div>
+            </TabsContent>
+          </Tabs>
         </main>
       </SidebarInset>
     </SidebarProvider>
