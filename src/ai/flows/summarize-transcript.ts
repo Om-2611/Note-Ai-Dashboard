@@ -37,13 +37,17 @@ const summarizeTranscriptPrompt = ai.definePrompt({
   name: 'summarizeTranscriptPrompt',
   input: {schema: SummarizeTranscriptInputSchema},
   output: {schema: SummarizeTranscriptOutputSchema},
-  prompt: `You are an AI assistant. Your task is to process the given transcript.
-You must return a JSON object with a single key "summary".
-The value of the "summary" key should be the exact content of the transcript provided below.
-
-Transcript:
-{{{transcript}}}
-`,
+  prompt:  `You are an AI assistant. Your task is to summarize the given meeting transcript.
+  Return a JSON object with a single key "summary".
+  The value of "summary" must be a clear, concise summary in bullet points (not a verbatim copy).
+  Focus on:
+  - Key discussion points
+  - Decisions made
+  - Action items (if mentioned)
+  
+  Transcript:
+  {{{transcript}}}
+  `,
 });
 
 const summarizeTranscriptFlow = ai.defineFlow(

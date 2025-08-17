@@ -234,19 +234,54 @@ export function NoteAIDashboard() {
     }
   };
 
-  const handleSendEmail = () => {
+  const handleSendEmail = async () => {
     if (!recipientEmail) {
       toast({ variant: 'destructive', title: 'Error', description: 'Please enter a recipient email.' });
       return;
     }
-    if (!activeSummary) {
+    if (!editedSummary) {
       toast({ variant: 'destructive', title: 'Error', description: 'No active summary to share.' });
       return;
     }
-    const subject = `Meeting Summary: ${activeSummary.title}`;
-    const body = encodeURIComponent(editedSummary);
-    window.location.href = `mailto:${recipientEmail}?subject=${subject}&body=${body}`;
+
+    setIsLoading(true);
+    setLoadingMessage("Sending email...");
+
+    try {
+      const response = await fetch("/api/send-email", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: recipientEmail, summary: editedSummary }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok && data.success) {
+        toast({
+          title: "Email Sent",
+          description: "Summary PDF sent successfully.",
+        });
+        setRecipientEmail(""); // Clear email field on success
+      } else {
+        toast({
+          variant: "destructive",
+          title: "Email Failed",
+          description: data.error || "Could not send email.",
+        });
+      }
+    } catch (error) {
+      console.error("Email sending error:", error);
+      toast({
+        variant: "destructive",
+        title: "Email Failed",
+        description: "An unexpected error occurred.",
+      });
+    } finally {
+      setIsLoading(false);
+      setLoadingMessage("");
+    }
   };
+
 
   return (
     <SidebarProvider>

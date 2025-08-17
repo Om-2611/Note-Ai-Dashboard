@@ -18,6 +18,17 @@ const nextConfig: NextConfig = {
       },
     ],
   },
+  webpack: (config, { isServer }) => {
+    // Resolve pdf-lib for the server-side build
+    if (isServer) {
+      config.externals.push({
+        'pdf-lib': 'commonjs pdf-lib',
+      });
+    }
+    return config;
+  },
+
 };
 
 export default nextConfig;
+
